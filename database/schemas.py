@@ -22,5 +22,4 @@ class UserModel(BaseModel):
 class TaskMode(BaseModel):
     title : str
     description: str 
-
-    repeatOn : List[str]
+    schedule : List[str]

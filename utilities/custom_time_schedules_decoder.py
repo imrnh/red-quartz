@@ -1,6 +1,6 @@
 #String format: " YYYY-MM-DD  HOUR:MIN  DAY_OF_WEEK "
 
-def repeatOnDecoder_getDate(workingString): #This "workingString" will always be a list if we directly pass the retrived data of the column from the database.
+def customTimeScheduleDecoder(workingString): #This "workingString" will always be a list if we directly pass the retrived data of the column from the database.
     listOfObjects = [] 
     for itr in workingString:
         
@@ -22,3 +22,4 @@ def repeatOnDecoder_getDate(workingString): #This "workingString" will always be
         listOfObjects.append(obj)
 
     return listOfObjects #The output of the function is also list which contains multiple dictionaries.
+
