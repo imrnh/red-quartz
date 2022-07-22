@@ -1,4 +1,5 @@
-from database import Base
+from asyncio import tasks
+from database.db_config import Base 
 from sqlalchemy import Column, Integer, Boolean, Text, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship 
 from sqlalchemy_utils.types import ChoiceType 
@@ -7,9 +8,9 @@ from sqlalchemy.ext.mutable import MutableList
 from sqlalchemy.types import PickleType
 
 
-class User(Base):
+class UserModel(Base):
 
-    USER_PAYMENT_TYPE = (
+    USER_ACCOUNT_STATUS = (
         ("TRIAL","Free-Trial"), # That means user is on free trial
         ("SUB","Paid"), # This means user is paid. When it is set to sub, we will have another table to track subscription starting date to end date and offer full service.
         ("FREE","Free") # This means user is a free user. This may not be available. Still just created here for the purpose of code reusing if we need it later.
@@ -22,14 +23,15 @@ class User(Base):
     first_name = Column(String(25))
     last_name = Column(String(25))
     password = Column(Text, nullable = True)
-    payment_status = Column(ChoiceType(USER_PAYMENT_TYPE), default = "TRIAL") 
+    accout_status = Column(ChoiceType(USER_ACCOUNT_STATUS), default = "TRIAL") 
     subscription_Started = Column(DateTime, nullable = False) #The day of the creation of acc will be here. 
         # Now, as creating an account leads to 30 days free trial, this without paying will be the time when free trial started. 
         # And by based on payment status, we will understand if he is a free-trial user or paid user. 
-        # But for offering our services, the date stored here should not be older than 30 days.
+        # But for offering our paid services, the date stored here should not be older than 30 days.
+        # if the user get demoted to free user, we will clear the date.
     created_at = Column(DateTime, default = datetime.datetime.utcnow)
     updated_at = Column(DateTime, nullable = True)
-    orders = relationship('TaskCategories', back_populates='user')
+    user_defined_task_categories = relationship('TaskCategories', back_populates='user')
 
 
     def __repr__ (self):
@@ -42,7 +44,7 @@ class TaskCategories(Base): # Category for task. Like section in Tick Tick.
         id = Column(Integer, primary_key=True)
         category_title = Column(String(25), nullable = False)
         user_id = Column(Integer, ForeignKey('user.id'))
-        user = relationship('User', back_populates='user_defined_task_categories')
+        user = relationship('UserModel', back_populates='user_defined_task_categories')
     
 
 
@@ -61,7 +63,7 @@ class Task(Base):
                 ("MANUAL", "Manual")
         )
 
-        __tablename__ = "tasks"
+        __tablename__ = "task"
         id = Column(Integer, primary_key = True)
         title = Column(String(100), nullable = False)
         iconId = Column(Integer()) # This data will be sent to front-end as integer. And front-end will handle it itself. 
@@ -138,20 +140,20 @@ class Task(Base):
             This way we will not execute it outside repeat card without further information.
 """
 
-class OldTaskTable(Base):
-    __tablename__ = "tasks"
-    id = Column(Integer, primary_key = True)
-    title : Column(String(100), nullable = False)
-    description : Column(Text)
+# class OldTaskTable(Base):
+#     __tablename__ = "tasks"
+#     id = Column(Integer, primary_key = True)
+#     title : Column(String(100), nullable = False)
+#     description : Column(Text)
 
-    #schedule will contain list of strings. Every item on the list will contain the date, the time and the day of the week. 
-    schedule = Column(MutableList.as_mutable(PickleType), default=[]) 
-    in_repeatCard: Column(Boolean, default = False) #If this is true, that means, this task is in the repeat card.
-    out_repeatCard: Column(Boolean, default = True) #If this is true, that means, this task will be in todo list of the user for the time in schedule.
+#     #schedule will contain list of strings. Every item on the list will contain the date, the time and the day of the week. 
+#     schedule = Column(MutableList.as_mutable(PickleType), default=[]) 
+#     in_repeatCard: Column(Boolean, default = False) #If this is true, that means, this task is in the repeat card.
+#     out_repeatCard: Column(Boolean, default = True) #If this is true, that means, this task will be in todo list of the user for the time in schedule.
 
-    alloc_point_total : Column(Integer, nullable = False)
-    alloc_algorithm: Column(String(), nullable = False)
-    negative_point : Column(Integer, nullable = True)
-    neg_point_alorithm: Column(String(), nullable = True)
+#     alloc_point_total : Column(Integer, nullable = False)
+#     alloc_algorithm: Column(String(), nullable = False)
+#     negative_point : Column(Integer, nullable = True)
+#     neg_point_alorithm: Column(String(), nullable = True)
 
-            #--- N.D... TaskExecutionTime class is not ready yet.
+#             #--- N.D... TaskExecutionTime class is not ready yet.
