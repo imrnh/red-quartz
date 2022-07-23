@@ -24,7 +24,7 @@ class UserModel(Base):
     last_name = Column(String(25))
     password = Column(Text, nullable = True)
     accout_status = Column(ChoiceType(USER_ACCOUNT_STATUS), default = "TRIAL") 
-    subscription_Started = Column(DateTime, nullable = False) #The day of the creation of acc will be here. 
+    subscription_Started = Column(DateTime, nullable = False, default = datetime.datetime.utcnow) #The day of the creation of acc will be here. 
         # Now, as creating an account leads to 30 days free trial, this without paying will be the time when free trial started. 
         # And by based on payment status, we will understand if he is a free-trial user or paid user. 
         # But for offering our paid services, the date stored here should not be older than 30 days.

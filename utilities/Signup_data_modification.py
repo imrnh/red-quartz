@@ -6,7 +6,6 @@ def remove_whitespaces_from_front_and_rear(newUser):
     newUser.first_name: str = (newUser.first_name).strip()
     newUser.last_name: str = (newUser.last_name).strip()
     newUser.password: str = (newUser.password).strip()  #Password can only be a-z, A-Z, 0-9 and _ ! @ # $ % ^ & * ( ) - + /   Anything else is not allowed.
-    newUser.confirm_password: str = (newUser.confirm_password).strip()
 
     return newUser
 
@@ -36,4 +35,18 @@ def username_validator(userName):
     if underscore_count > 2:
         return HTTPException(status_code = status.HTTP_406_NOT_ACCEPTABLE, 
                     detail="Username should not contain more than 2 underscore.")
+
+
+
+
+#Password should be at least 8 character long and not more than 50 characters.
+#Password cannot contain ; 
+def check_password_ok(passW):
+
+    #Length check
+    passLength = len(passW)
+
+    if passLength > 50 or passLength < 8:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Password should be at least 8 character long and not more than 50 characters long") 
+
 
