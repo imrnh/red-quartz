@@ -2,164 +2,138 @@ from types import NoneType
 from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi_jwt_auth import AuthJWT
 from fastapi.encoders import jsonable_encoder
-from sqlalchemy import null
-from werkzeug.security import generate_password_hash, check_password_hash  # To hash password.
+
 from database.db_config import SessionLocal, engine
 from database.schemas import SignupSchema, LoginSchema
 from database.models import UserModel
-from utilities.Signup_data_modification import remove_whitespaces_from_front_and_rear, username_validator
+
+from utilities.Signup_data_modification_and_validation import remove_whitespaces_from_front_and_rear, \
+    username_validator, check_password_ok
 from utilities.check_valid_email import is_valid_email
 
 authRouter = APIRouter()
 session = SessionLocal(bind=engine)
 
 
-
-# ------------------------------------
-#               
-#               SIGNUP 
-#
-# ------------------------------------
+# ______________ REGISTER ______________
 
 @authRouter.post("/register", status_code=status.HTTP_201_CREATED)
-async def register(newUser: SignupSchema):
-    newUser = remove_whitespaces_from_front_and_rear(newUser) 
-    raised_exception: HTTPException = username_validator(newUser.username) #If no exception is raised, this will return null.
-    
-    if raised_exception:
-        return raised_exception
-    
-    valid_email = is_valid_email(newUser.email)
-    if not valid_email:
-        raise HTTPException(status_code= status.HTTP_403_FORBIDDEN, detail="Given email address is not a valid email address.")
+async def register(new_user: SignupSchema):
+    new_user = remove_whitespaces_from_front_and_rear(new_user)
+
+    raised_exception: HTTPException = username_validator(
+        new_user.username)  # If no exception is raised, this will return null.
+    if raised_exception:raise raised_exception
+
+    invalid_email: HTTPException = is_valid_email(new_user.email)
+    if invalid_email: raise invalid_email
+
+    invalid_password: HTTPException = check_password_ok(new_user.password)  # If no exception is raised, this will return null.
+    if invalid_password: raise invalid_password
 
     # Checking uniqueness of the email and username
-    db_username = session.query(UserModel).filter(UserModel.username==newUser.username).first()
-    db_email = session.query(UserModel).filter(UserModel.email==newUser.email).first()
+    db_username = session.query(UserModel).filter(UserModel.username == new_user.username).first()
+    db_email = session.query(UserModel).filter(UserModel.email == new_user.email).first()
 
     if db_username is not None:
-        raise HTTPException( status_code=status.HTTP_400_BAD_REQUEST, detail = "User with same username already exists" )
-    
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User with same username already exists")
     if db_email is not None:
-        raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail = "User with same email already exists")
-    
-    
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User with same email already exists")
 
     new_user_db_object = UserModel(
-        username = newUser.username,
-        email = newUser.email,
-        first_name = newUser.first_name,
-        last_name = newUser.last_name,
-        #password = generate_password_hash(newUser.password)
-        password = newUser.password
+        username=new_user.username,
+        email=new_user.email,
+        first_name=new_user.first_name,
+        last_name=new_user.last_name,
+        password=new_user.password
     )
 
     session.add(new_user_db_object)
     session.commit()
 
-    # return {
-    #     "name": newUser.first_name + " " + newUser.last_name,
-    #     "username": newUser.username,
-    #     "email": newUser.email,
-    #     "password": newUser.password,
-    # }
-
-    return HTTPException(status_code=status.HTTP_201_CREATED, detail= 'User created')
+    return HTTPException(status_code=status.HTTP_201_CREATED, detail='User created')
 
 
+# _________________ LOGIN __________________
 
-
-
-
-# ------------------------------------
-#               
-#               LOGIN 
-#
-# ------------------------------------
-
-@authRouter.post("/login", status_code= status.HTTP_200_OK)
-async def login(req: LoginSchema, Authorize: AuthJWT = Depends()):
-
-    def token_generate_for_this_user(usrnme):
-        access_token = Authorize.create_access_token(subject=usrnme, user_claims={'username': usrnme})
-        refresh_token = Authorize.create_refresh_token(subject=usrnme)
+@authRouter.post("/login", status_code=status.HTTP_200_OK)
+async def login(login_request: LoginSchema, authorize: AuthJWT = Depends()):
+    def token_generate_for_this_user(logged_username):
+        access_token = authorize.create_access_token(subject=logged_username, user_claims={'username': logged_username})
+        refresh_token_ = authorize.create_refresh_token(subject=logged_username)
         response = {
-            'access' : access_token,
-            'refresh': refresh_token
+            'access': access_token,
+            'refresh': refresh_token_
         }
         return jsonable_encoder(response)
 
+    # ___________________ LOGIN with username ____________________
+    if login_request.keyName.name == "username":  # ___ LOGIN USING USERNAME
+        if type(login_request.username) is not NoneType:
+            raised_exception_username_validation = username_validator(login_request.username)
 
-    if req.keyName.name == "username":
-        if type(req.username) is not NoneType:
-            db_user = session.query(UserModel).filter(UserModel.username==req.username).first()
+            if raised_exception_username_validation:
+                return raised_exception_username_validation
+
+            db_user = session.query(UserModel).filter(UserModel.username == login_request.username).first()
             if type(db_user) is not NoneType:
-                #data fetched. Now handle login logic
-                if db_user.password == req.password: #if both password matches.
+                if db_user.password == login_request.password:  # if both password matches.
                     return token_generate_for_this_user(db_user.username)
                 else:
-                     raise HTTPException(status_code= status.HTTP_401_UNAUTHORIZED, detail="Incorrect Password.")
+                    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect Password.")
+            else:  # if type(db_user) is not NoneType
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No account found")
+        else:  # if type(req.username) is not NoneType
+            raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Key is username & username empty")
 
-
-            else:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No account found with this username")   
-        else: #if type(req.username) is not NoneType
-            raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail = "Username is empty but asked to login with username")
-    
-
-
-
-    elif req.keyName.name == "email":
-        if type(req.email) is not NoneType:
-            valid_email = is_valid_email(req.email) #Checking the validity of the email address
+    # --------------------- LOGIN with email ---------------------
+    elif login_request.keyName.name == "email":
+        if type(login_request.email) is not NoneType:
+            valid_email = is_valid_email(login_request.email)  # Checking the validity of the email address
             if not valid_email:
-                raise HTTPException(status_code= status.HTTP_403_FORBIDDEN, detail="Given email address is not a valid email address.")
-
-            db_user = session.query(UserModel).filter(UserModel.email==req.email).first()
-            
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a valid email")
+            db_user = session.query(UserModel).filter(UserModel.email == login_request.email).first()
             if type(db_user) is not NoneType:
-                # data fetched now. Now handle login logic.
-                if db_user.password == req.password: #if both password matches.
+                if db_user.password == login_request.password:  # if both password matches.
                     return token_generate_for_this_user(db_user.username)
                 else:
-                     raise HTTPException(status_code= status.HTTP_401_UNAUTHORIZED, detail="Incorrect Password.")
-
-
-
+                    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect Password.")
             else:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No account found with this email")   
-        else: #if type(req.username) is not NoneType
-            raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail = "Email is empty but asked to login with email")
-
-
-
-
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No account found with this email")
+        else:  # if type(req.username) is not NoneType
+            raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Key is email but email empty")
     else:
-        raise HTTPException(status_code= status.HTTP_403_FORBIDDEN, detail="Seems like a middle man attack. Keyname can be only 'username' or 'email'. Anything else is forbidden.")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=" Keyname can be only 'username' or 'email'")
 
 
-
-
-
-# -------------------------------------------------
-#               
-#            REFRESH TOKEN GENERATOR 
-#
-# -------------------------------------------------
-
-
-
+# ______________ REFRESH TOKEN GENERATOR ______________
 
 @authRouter.get("/refresh")
-async def refresh_token(Authorize: AuthJWT = Depends()):
+async def refresh_token(authorize: AuthJWT = Depends()):
     try:
-        Authorize.jwt_refresh_token_required()
-    
+        authorize.jwt_refresh_token_required()
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail = "Require valid refresh token")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Require valid refresh token")
 
-    access_token = Authorize.create_access_token(subject=Authorize.get_jwt_subject())
-    
+    access_token = authorize.create_access_token(subject=authorize.get_jwt_subject())
+    refresh_token_ = authorize.create_refresh_token(subject=authorize.get_jwt_subject())
+
     return jsonable_encoder(
-        {"accesstoken": access_token}
-    )  
+        {
+            "access-token": access_token,
+            "refresh-token": refresh_token_
+        }
+    )
+
+
+# Tutorial function of how to lock a function and how to show username after user is logged in.
+@authRouter.get("/username")
+def get_username(authorize: AuthJWT = Depends()):
+    try:
+        authorize.jwt_required()
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+
+    current_username = authorize.get_jwt_subject()
+
+    return {"username": current_username}
