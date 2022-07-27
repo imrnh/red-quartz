@@ -6,8 +6,10 @@ from routes.taskRoute import task_router
 
 app = FastAPI()
 
+
 @AuthJWT.load_config
 def get_config():
     return Settings()
+
 
 app.include_router(authRouter, prefix="/auth", tags = ["Authentication"])

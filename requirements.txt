@@ -1,0 +1,7 @@
+fastapi
+fastapi_jwt_auth
+werkzeug
+sqlalchemy
+uvicorn
+sqlalchemy_utils
+psycopg2 # pip install psycopg2-binary
