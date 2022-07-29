@@ -48,3 +48,14 @@ async def create_new_task(new_task: TaskSchema, authorize: AuthJWT = Depends()):
         "status_code": status.HTTP_201_CREATED,
         "detail": "New task has been created"
     }
+
+
+@task_router.get('/view')
+async def view_tasks(authorize: AuthJWT = Depends()):
+    try:
+        authorize.jwt_required()
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+
+    current_user = authorize.get_jwt_subject()
+    
