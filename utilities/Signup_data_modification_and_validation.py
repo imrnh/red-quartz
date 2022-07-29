@@ -52,5 +52,3 @@ def check_password_ok(password_given):
     if suspicious:
         raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE,
                             detail="Password can only contain [a-z, A-Z, 0-9, !, @, #, *, -, +, /]")
-
-

@@ -7,8 +7,7 @@ from database.db_config import SessionLocal, engine
 from database.schemas import SignupSchema, LoginSchema
 from database.models import UserModel
 
-from utilities.Signup_data_modification_and_validation import remove_whitespaces_from_front_and_rear, \
-    username_validator, check_password_ok
+from utilities.Signup_data_modification_and_validation import remove_whitespaces_from_front_and_rear, username_validator, check_password_ok
 from utilities.check_valid_email import is_valid_email
 
 authRouter = APIRouter()
@@ -58,9 +57,10 @@ async def register(new_user: SignupSchema):
 
 @authRouter.post("/login", status_code=status.HTTP_200_OK)
 async def login(login_request: LoginSchema, authorize: AuthJWT = Depends()):
-    def token_generate_for_this_user(logged_username):
-        access_token = authorize.create_access_token(subject=logged_username, user_claims={'username': logged_username})
-        refresh_token_ = authorize.create_refresh_token(subject=logged_username)
+
+    def token_generate_for_this_user(logged_userid):
+        access_token = authorize.create_access_token(subject=logged_userid, user_claims={'username': logged_userid})
+        refresh_token_ = authorize.create_refresh_token(subject=logged_userid)
         response = {
             'access': access_token,
             'refresh': refresh_token_
@@ -78,7 +78,7 @@ async def login(login_request: LoginSchema, authorize: AuthJWT = Depends()):
             db_user = session.query(UserModel).filter(UserModel.username == login_request.username).first()
             if type(db_user) is not NoneType:
                 if db_user.password == login_request.password:  # if both password matches.
-                    return token_generate_for_this_user(db_user.username)
+                    return token_generate_for_this_user(db_user.id)
                 else:
                     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect Password.")
             else:  # if type(db_user) is not NoneType
@@ -127,8 +127,9 @@ async def refresh_token(authorize: AuthJWT = Depends()):
 
 
 # Tutorial function of how to lock a function and how to show username after user is logged in.
-@authRouter.get("/username")
+@authRouter.get("/userid")
 def get_username(authorize: AuthJWT = Depends()):
+
     try:
         authorize.jwt_required()
     except Exception as e:

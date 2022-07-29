@@ -1,7 +1,8 @@
-fastapi
+fastapi~=0.79.0
 fastapi_jwt_auth
 werkzeug
-sqlalchemy
+sqlalchemy~=1.4.39
 uvicorn
 sqlalchemy_utils
 psycopg2 # pip install psycopg2-binary
+pydantic~=1.9.1
