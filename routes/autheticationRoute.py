@@ -135,6 +135,6 @@ def get_username(authorize: AuthJWT = Depends()):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 
-    current_username = authorize.get_jwt_subject()
+    current_user = authorize.get_jwt_subject()
 
-    return {"username": current_username}
+    return {"user_id": current_user}

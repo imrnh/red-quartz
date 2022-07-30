@@ -46,11 +46,11 @@ async def get_category_names(new_category: TaskCategorySchema, authorize: AuthJW
 async def view_category(authorize: AuthJWT = Depends()):
     try:
         authorize.jwt_required()
+        current_user = authorize.get_jwt_subject()
+
+        db_task_categories = session.query(TaskCategoryModel.id, TaskCategoryModel.category_title).filter(TaskCategoryModel.user_id == current_user).all()
+
+        return {"categories": list(db_task_categories)}
+
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
-
-    current_user = authorize.get_jwt_subject()
-
-    db_task_categories = session.query(TaskCategoryModel).filter(TaskCategoryModel.user_id == current_user).all()
-
-    return {"categories": list(db_task_categories)}

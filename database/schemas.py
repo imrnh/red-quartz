@@ -33,7 +33,6 @@ class TaskSchema(BaseModel):
     title: str
     icon_id: int
     quote: str
-    user_id: int
     frequency_model: str
     frequency: List[str]
     goal: str
@@ -53,9 +52,6 @@ class TaskSchema(BaseModel):
     category: int
 
     reminderTimes: List[str]
-    created_at: datetime.datetime | None = datetime.datetime.utcnow()
-    updated_at: datetime.datetime | None = datetime.datetime.utcnow()
-
 
 class TaskCategorySchema(BaseModel):
     category_title: str
