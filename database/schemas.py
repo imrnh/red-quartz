@@ -53,5 +53,13 @@ class TaskSchema(BaseModel):
 
     reminderTimes: List[str]
 
+
 class TaskCategorySchema(BaseModel):
     category_title: str
+
+
+class RegisterPointsSchema(BaseModel):
+    current_task: int
+    units_completed: int
+    negative_units: int | None = None
+    point_registered: datetime.datetime | None = datetime.datetime.utcnow()

@@ -93,11 +93,11 @@ class TaskModel(Base):
 
     reminderTimes = Column(MutableList.as_mutable(PickleType()), default=[])
     # The type of this will be string.
-    # This will work only on the days where the task will be needed to executed.
+    # This will work only on the days when the task will be needed to execute.
     # These days will be selected by the user either by date or weekly repeat cycle or interval cycle.
 
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, nullable=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 
 class TaskCategoryModel(Base):  # Category for task. Like section in Tick Tick.
@@ -106,3 +106,24 @@ class TaskCategoryModel(Base):  # Category for task. Like section in Tick Tick.
     category_title = Column(String(25), nullable=False)
     user_id = Column(Integer, ForeignKey('user.id'))
     user = relationship('UserModel')
+
+
+class PointsModel(Base):
+    __tablename__ = "points"
+    id = Column(Integer, primary_key = True)
+    task_id = Column(Integer, ForeignKey('task.id'))
+    user_id = Column(Integer, ForeignKey('user.id'))
+    achieved_point = Column(Integer, default = 0)
+    point_registered = Column(DateTime, default = datetime.datetime.utcnow())
+    user = relationship('UserModel')
+    task = relationship('TaskModel')
+
+
+class TaskCompletionDetailsModel(Base):
+    __tablename__ = "task_completion_details"
+    id = Column(Integer, primary_key = True)
+    task_id = Column(Integer, ForeignKey('task.id'))
+    user_id = Column(Integer, ForeignKey('user.id'))
+    task_completion_ = Column(MutableList.as_mutable(PickleType()), default = [])
+    user = relationship('UserModel')
+    task = relationship('TaskModel')
