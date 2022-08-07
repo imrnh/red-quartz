@@ -1,5 +1,6 @@
 import datetime
 from pydantic import BaseModel, Field
+from typing import Union
 from typing import List
 from enum import Enum
 
@@ -22,8 +23,8 @@ class KeyNameOfLoginSchema(Enum):
 
 
 class LoginSchema(BaseModel):
-    username: str | None = None
-    email: str | None = None
+    username: Union[str, None] = None
+    email: Union [str, None] = None
     password: str
     keyName: KeyNameOfLoginSchema  # Flutter basically send korbe je ami username dici naki email dici.
     # eita user end theke kore ana amar jonno cost saving onek.
@@ -38,16 +39,16 @@ class TaskSchema(BaseModel):
     goal: str
 
     # If goal is set to achieve it all then these values should be null.
-    daily_amount_to_reach: int | None = 0
-    counting_unit: str | None = None
-    when_checking: str | None = "AUTO"
-    record_count_when_auto_checking: int | None = 1
+    daily_amount_to_reach: Union[int, None] = 0
+    counting_unit: Union [str, None] = None
+    when_checking: Union [str, None] = "AUTO"
+    record_count_when_auto_checking: Union [int, None] = 1
 
-    allocated_point: int | None = 0
-    point_algorithm: str | None = None
-    over_amount_algorithm: str | None = None
-    negative_point: int | None = 0
-    negative_point_algorithm: str | None = None
+    allocated_point: Union [int, None] = 0
+    point_algorithm: Union [str, None] = None
+    over_amount_algorithm: Union [str, None] = None
+    negative_point: Union [int, None] = 0
+    negative_point_algorithm: Union [str, None] = None
 
     category: int
 
@@ -61,5 +62,5 @@ class TaskCategorySchema(BaseModel):
 class RegisterPointsSchema(BaseModel):
     current_task: int
     units_completed: int
-    negative_units: int | None = None
-    point_registered: datetime.datetime | None = datetime.datetime.utcnow()
+    negative_units: Union[int, None] = 0
+    point_registered: Union [datetime.datetime, None] = datetime.datetime.utcnow()

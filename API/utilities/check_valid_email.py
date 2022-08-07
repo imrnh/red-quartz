@@ -14,3 +14,5 @@ def is_valid_email(email):
     if not re.fullmatch(regex, email):
         raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE,
                             detail="Given email address is not a valid email address.")
+    else:
+        return True

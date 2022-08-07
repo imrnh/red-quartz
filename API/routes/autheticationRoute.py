@@ -1,7 +1,7 @@
-from types import NoneType
 from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi_jwt_auth import AuthJWT
 from fastapi.encoders import jsonable_encoder
+from pydantic.typing import NoneType
 
 from database.db_config import SessionLocal, engine
 from database.schemas import SignupSchema, LoginSchema
@@ -69,12 +69,14 @@ async def login(login_request: LoginSchema, authorize: AuthJWT = Depends()):
 
     # ___________________ LOGIN with username ____________________
     if login_request.keyName.name == "username":  # ___ LOGIN USING USERNAME
+
         if type(login_request.username) is not NoneType:
             raised_exception_username_validation = username_validator(login_request.username)
 
             if raised_exception_username_validation:
                 return raised_exception_username_validation
 
+            login_request.username = login_request.username.strip().lower()
             db_user = session.query(UserModel).filter(UserModel.username == login_request.username).first()
             if type(db_user) is not NoneType:
                 if db_user.password == login_request.password:  # if both password matches.
@@ -89,9 +91,12 @@ async def login(login_request: LoginSchema, authorize: AuthJWT = Depends()):
     # --------------------- LOGIN with email ---------------------
     elif login_request.keyName.name == "email":
         if type(login_request.email) is not NoneType:
-            valid_email = is_valid_email(login_request.email)  # Checking the validity of the email address
+
+            valid_email = is_valid_email(login_request.email)  # Checking if the email address match our required types or not.
             if not valid_email:
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a valid email")
+
+            login_request.email = login_request.email.strip().lower()
             db_user = session.query(UserModel).filter(UserModel.email == login_request.email).first()
             if type(db_user) is not NoneType:
                 if db_user.password == login_request.password:  # if both password matches.
