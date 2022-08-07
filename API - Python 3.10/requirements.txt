@@ -4,6 +4,7 @@ werkzeug
 sqlalchemy~=1.4.39
 uvicorn
 sqlalchemy_utils
+psycopg2 # pip install psycopg2-binary
 pydantic~=1.9.1
 python-dateutil
 mysql-connector-python
